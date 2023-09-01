@@ -3,14 +3,10 @@
     padding: 0;
     box-sizing: border-box;
 }
-body{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
 .signup{
-    width: auto;
+    width: 30vw;
     margin: 3rem;
+    padding: 1rem;
     background-color: rgb(0, 231, 252);
 }
 .form-group{
@@ -21,6 +17,13 @@ body{
     margin: 1rem 0;
 }
 .btn{
-    width: 100%;
-    margin: 1rem 0;
+    width: auto;
+    margin: 1rem;
+    padding: 0.6rem;
+    background-color: white;
+    border: none;
+}
+#error{
+    margin: 3rem;
+    color: red;
 }
