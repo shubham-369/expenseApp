@@ -1,8 +1,5 @@
 "use strict";
 
-const user = document.getElementById('username');
-const email = document.getElementById('email');
-const password = document.getElementById('password');
 const signupError = document.getElementById('signupError');
 const signupForm = document.getElementById('signupForm');
 

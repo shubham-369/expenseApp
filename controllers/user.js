@@ -1,8 +1,10 @@
+const bcrypt = require('bcrypt');
 const User = require('../models/user');
+const { result } = require('lodash');
 
 exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
-
+    const saltRounds = 10;
     try {
         const existingUsername = await User.findAll({ where: { username: username} });
         const existingemail = await User.findAll({ where: { email: email } });
@@ -13,34 +15,50 @@ exports.signup = async (req, res, next) => {
             res.status(403).json({message: 'Email already exist'})
         } 
         else {
-            await User.create({
-                username: username,
-                email: email,
-                password: password
+            bcrypt.hash(password, saltRounds, (err, hashedPassword) => {
+                if(err){
+                    throw new err;
+                }
+                else{                            
+                    User.create({
+                        username: username,
+                        email: email,
+                        password: hashedPassword
+                    })
+                    .then(() => {
+                        res.status(200).json({ message: 'User created' });
+                    })
+                    .catch((error) => {
+                        console.log('error while creating user :', error);
+                        res.status(500).json({message: 'Error while creating user'});
+                    });                    
+                }
             });
-            res.status(200).json({ message: 'User created' });
         }
     } catch (error) {
         res.status(500).json({ message: 'Failed to create user' });
     }
 };
 
-exports.login = async(req, res, next) => {
-    const {username, password} = req.body;
+exports.login = async (req, res, next) => {
+    const { email, password } = req.body;
 
-    try{
-        const user = await User.findOne({where:{username: username}});
-        if(!user){
-            res.status(404).json({message: 'Username does not exist'});
-        }else if(user.password !== password){
-            res.status(401).json({message: 'Wrong password'});
-        }else{
-            res.status(200).json({message: 'Log in successfully!'});
+    try {
+        const user = await User.findOne({ where: { email: email } });
+
+        if (!user) {
+            res.status(404).json({ message: 'Email does not exist' });
+        } else {
+            const result = await bcrypt.compare(password, user.password);
+
+            if (result) {
+                res.status(200).json({ message: 'Log in successfully!' });
+            } else {
+                res.status(401).json({ message: 'Wrong password' });
+            }
         }
+    } catch (error) {
+        console.error('Failed to login:', error);
+        res.status(500).json({ message: 'Failed to login' });
     }
-    catch(error) {
-        console.log('failed to login :', error);
-        res.status(500).json({message: 'failed to login'});
-    }
-
 };
