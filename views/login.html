@@ -8,7 +8,7 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
-    <title>SignUp</title>
+    <title>Login</title>
   </head>
   <body>
 
@@ -35,22 +35,18 @@
     <div class="container mt-5">
         <div class="bg-light py-5 px-3 w-50 mx-auto">
 
-            <form action="/signup" id="signupForm" method="post">
-                <h1 class="text-center mb-3">SignUp</h1>
+            <form action="/login" id="loginForm" method="post">
+                <h1 class="text-center mb-3">Login</h1>
                 <div class="form-group">
                     <label for="user">Username : </label>
                     <input class="form-control" type="text" name="username" id="user" required>
                 </div>
                 <div class="form-group">
-                    <label for="email">Email : </label>
-                    <input class="form-control" type="email" name="email" id="email" required>
-                </div>
-                <div class="form-group">
                     <label for="password">Password : </label>
                     <input class="form-control" type="password" name="password" id="password" required>
                 </div>
-                <button type="submit" class="btn btn-block btn-info mt-3" name="submit">SignUp</button>
-                <div id="signupError" class=" text-center text-danger mt-3"></div>
+                <button type="submit" class="btn btn-block btn-info mt-3" name="submit">Login</button>
+                <div id="loginError" class=" text-center text-danger mt-3"></div>
             </form>
         </div>
     </div>

@@ -23,4 +23,24 @@ exports.signup = async (req, res, next) => {
     } catch (error) {
         res.status(500).json({ message: 'Failed to create user' });
     }
-}
+};
+
+exports.login = async(req, res, next) => {
+    const {username, password} = req.body;
+
+    try{
+        const user = await User.findOne({where:{username: username}});
+        if(!user){
+            res.status(404).json({message: 'Username does not exist'});
+        }else if(user.password !== password){
+            res.status(404).json({message: 'Wrong password'});
+        }else{
+            res.status(200).json({message: 'Log in successfully!'});
+        }
+    }
+    catch(error) {
+        console.log('failed to login :', error);
+        res.status(500).json({message: 'failed to login'});
+    }
+
+};
