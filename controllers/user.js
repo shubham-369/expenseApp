@@ -33,7 +33,7 @@ exports.login = async(req, res, next) => {
         if(!user){
             res.status(404).json({message: 'Username does not exist'});
         }else if(user.password !== password){
-            res.status(404).json({message: 'Wrong password'});
+            res.status(401).json({message: 'Wrong password'});
         }else{
             res.status(200).json({message: 'Log in successfully!'});
         }
