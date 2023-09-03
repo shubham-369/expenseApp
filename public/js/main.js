@@ -43,7 +43,7 @@ if (loginForm){
 
         try{
             const response = await axios.post('/user/login', jsondata);
-            window.alert(response.data.message);
+            window.location.href = '/expense.html';
             loginForm.reset();
         }
         catch(error){
@@ -52,3 +52,75 @@ if (loginForm){
         }
     });
 };
+
+const expenseForm = document.getElementById('expenseForm');
+const expenseList = document.getElementById('expenseList');
+
+if(expenseForm){
+    expenseForm.addEventListener('submit', async(e)=> {
+        e.preventDefault();
+
+        const formdata = new FormData(e.target);
+        const jsondata = {};
+
+        formdata.forEach((value, key) => {
+            jsondata[key] = value;
+        });
+
+        try{
+            const response = await axios.post('/user/expense', jsondata);
+            console.log('expense added :', response.data.message);
+
+            expenseList.innerHTML= '';
+            const response2 = await axios.get('/user/expenses');
+            const data = response2.data;
+            data.forEach(expense => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                ₹ ${expense.price} - ${expense.description} - ${expense.category}
+                <button data-id="${expense.id}" class="btn btn-danger delete">Delete expense</button>
+                `;
+                expenseList.appendChild(li);
+            });
+
+            expenseForm.reset();
+        }
+        catch(error){
+            console.log('error while adding expense :', error);
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', async() => {
+        try{
+            const response = await axios.get('/user/expenses');
+            const data = response.data;
+            data.forEach(expense => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                ₹ ${expense.price} - ${expense.description} - ${expense.category}
+                <button data-id="${expense.id}" class="btn btn-danger delete">Delete expense</button>
+                `;
+                expenseList.appendChild(li);
+            });
+        }
+        catch(error){
+            console.log('error while getting expenses :', error);
+        }
+    });
+
+    expenseList.addEventListener('click', async(e) => {
+        if(e.target.classList.contains('delete')){
+            const id = e.target.getAttribute('data-id');
+            try{
+                const response = await axios.delete('/user/deleteExpense', {data: {deleteID: id}});
+                console.log('expense deleted', response.data.message);
+
+                e.target.parentElement.remove();
+            }
+            catch(error){
+                console.log('error while deleting expense', error);
+            }
+        }
+    })
+}
+

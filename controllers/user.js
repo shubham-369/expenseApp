@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
-const { result } = require('lodash');
+const Expense = require('../models/expenses');
 
 exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -62,3 +62,43 @@ exports.login = async (req, res, next) => {
         res.status(500).json({ message: 'Failed to login' });
     }
 };
+
+exports.expense = async (req, res, next) => {
+    const {price, description, category} = req.body;
+
+    try{
+        await Expense.create({
+            price: price,
+            description: description,
+            category: category
+        })
+        res.status(200).json({message: 'Expense added'});
+    }
+    catch(error) {
+        console.error('Failed to add expense:', error);
+        res.status(500).json({message: 'Error while adding expense'});
+    }
+}
+
+exports.getExpenses = async (req, res, next) => {
+    try{
+        const data = await Expense.findAll();
+        res.status(200).json(data);
+    }
+    catch(error){
+        console.error('Failed to fetch expenses:', error);
+        res.status(500).json({message: 'Error while fetching expenses'});
+    }
+}
+
+exports.deleteExpense = async (req, res, next) => {
+    const {deleteID} = req.body;
+    try{
+        await Expense.destroy({where:{id:deleteID}});
+        res.status(200).json({message: 'Expense deleted'});
+    }
+    catch(error){
+        console.error('Failed to delete expense:', error);
+        res.status(500).json({message: 'Error while deleting expense'});
+    }
+}
