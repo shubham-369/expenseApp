@@ -2,6 +2,7 @@
 
 const signupError = document.getElementById('signupError');
 const signupForm = document.getElementById('signupForm');
+const token = localStorage.getItem('token');
 
 if (signupForm){
     signupForm.addEventListener('submit', async(e) => {
@@ -44,6 +45,8 @@ if (loginForm){
         try{
             const response = await axios.post('/user/login', jsondata);
             window.location.href = '/expense.html';
+            localStorage.setItem('token', response.data.token);
+
             loginForm.reset();
         }
         catch(error){
@@ -68,11 +71,11 @@ if(expenseForm){
         });
 
         try{
-            const response = await axios.post('/user/expense', jsondata);
+            const response = await axios.post('/user/expense', jsondata, {headers: {"Authorization": token}});
             console.log('expense added :', response.data.message);
 
             expenseList.innerHTML= '';
-            const response2 = await axios.get('/user/expenses');
+            const response2 = await axios.get('/user/expenses', {headers: {"Authorization": token}});
             const data = response2.data;
             data.forEach(expense => {
                 const li = document.createElement('li');
@@ -92,8 +95,9 @@ if(expenseForm){
 
     document.addEventListener('DOMContentLoaded', async() => {
         try{
-            const response = await axios.get('/user/expenses');
+            const response = await axios.get('/user/expenses', {headers: {"Authorization": token}});
             const data = response.data;
+
             data.forEach(expense => {
                 const li = document.createElement('li');
                 li.innerHTML = `
@@ -112,8 +116,8 @@ if(expenseForm){
         if(e.target.classList.contains('delete')){
             const id = e.target.getAttribute('data-id');
             try{
-                const response = await axios.delete('/user/deleteExpense', {data: {deleteID: id}});
-                console.log('expense deleted', response.data.message);
+                const response = await axios.delete(`/user/deleteExpense?id=${id}`, {headers: {"Authorization": token}});
+                console.log(response.data.message);
 
                 e.target.parentElement.remove();
             }

@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
+const generateToken = require('../util/jwt');
 const User = require('../models/user');
 const Expense = require('../models/expenses');
+const jwt = require('jsonwebtoken');
 
 exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -52,7 +54,8 @@ exports.login = async (req, res, next) => {
             const result = await bcrypt.compare(password, user.password);
 
             if (result) {
-                res.status(200).json({ message: 'Log in successfully!' });
+                const token = generateToken(user);
+                res.status(200).json({ message: 'Log in successfully!', token});
             } else {
                 res.status(401).json({ message: 'Wrong password' });
             }
@@ -65,13 +68,12 @@ exports.login = async (req, res, next) => {
 
 exports.expense = async (req, res, next) => {
     const {price, description, category} = req.body;
-
     try{
-        await Expense.create({
-            price: price,
-            description: description,
-            category: category
-        })
+        await req.user.createExpense({
+            price,
+            description,
+            category
+        });
         res.status(200).json({message: 'Expense added'});
     }
     catch(error) {
@@ -82,7 +84,7 @@ exports.expense = async (req, res, next) => {
 
 exports.getExpenses = async (req, res, next) => {
     try{
-        const data = await Expense.findAll();
+        const data = await req.user.getExpenses();
         res.status(200).json(data);
     }
     catch(error){
@@ -92,9 +94,10 @@ exports.getExpenses = async (req, res, next) => {
 }
 
 exports.deleteExpense = async (req, res, next) => {
-    const {deleteID} = req.body;
+    const {id} = req.query;
     try{
-        await Expense.destroy({where:{id:deleteID}});
+        const expense = await req.user.getExpenses({where:{id:id}});
+        expense[0].destroy();
         res.status(200).json({message: 'Expense deleted'});
     }
     catch(error){
