@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
 const generateToken = require('../util/jwt');
 const User = require('../models/user');
-const Expense = require('../models/expenses');
-const jwt = require('jsonwebtoken');
+const Order = require('../models/order');
+const Razorpay = require('razorpay');
 
 exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -80,7 +80,7 @@ exports.expense = async (req, res, next) => {
         console.error('Failed to add expense:', error);
         res.status(500).json({message: 'Error while adding expense'});
     }
-}
+};
 
 exports.getExpenses = async (req, res, next) => {
     try{
@@ -91,7 +91,7 @@ exports.getExpenses = async (req, res, next) => {
         console.error('Failed to fetch expenses:', error);
         res.status(500).json({message: 'Error while fetching expenses'});
     }
-}
+};
 
 exports.deleteExpense = async (req, res, next) => {
     const {id} = req.query;
@@ -103,5 +103,60 @@ exports.deleteExpense = async (req, res, next) => {
     catch(error){
         console.error('Failed to delete expense:', error);
         res.status(500).json({message: 'Error while deleting expense'});
+    }
+};
+
+exports.purchasePremium = async (req, res, next) => {
+    try{
+        const rzp = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
+        });
+        const amount = 2499*100;
+
+        const order = await new Promise((resolve, reject) => {
+            rzp.orders.create({amount, currency: 'INR'}, (err, order) => {
+                if(err){
+                    reject(new Error(JSON.stringify(err)));
+                }else{
+                    resolve(order);
+                }
+            });
+        });
+        await req.user.createOrder({orderID: order.id, status: 'PENDING'});
+
+        res.status(201).json({order, key_id: rzp.key_id});
+    }
+    catch(error){
+        console.log('error while purchasing premium', error);
+        res.status(500).json({message: 'Error while purchasing premium'});
+    }
+};
+
+exports.updateTransactionStatus = async (req, res, next) => {
+    const {order_id, payment_id} = req.body;
+    try{
+        if(!payment_id){
+            throw new Error('payment id missing');
+        }
+        const order = await Order.findOne({where: {orderID: order_id}});
+        if(!order){
+            res.status(404).json({message: 'Order not found'});
+        }
+        promise1 = order.update({paymentID: payment_id, status: 'SUCCESSFUL'})
+        promise2 = req.user.update({isPremiumUser: true});
+        Promise.all([promise1, promise2])
+        .then(() => {res.status(202).json({message: 'Transaction Successful', success: true});})
+        .catch((error) => {throw new Error});
+    }
+    catch(error){        
+        console.log('Error while making payment: ', error);
+
+        try {
+            const order = await Order.findOne({ where: {orderID: order_id} });
+            order.update({status: 'FAILED'});
+        } catch (error) {
+            console.error('Error updating order status to "FAILED": ', error);
+        }
     }
 }

@@ -91,6 +91,7 @@
     "qs": "^6.11.0",
     "range-parser": "^1.2.1",
     "raw-body": "^2.5.1",
+    "razorpay": "^2.9.2",
     "readdirp": "^3.6.0",
     "retry-as-promised": "^7.0.4",
     "safe-buffer": "^5.2.1",

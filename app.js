@@ -8,6 +8,7 @@ const userRoutes = require('./routes/user');
 
 const User = require('./models/user');
 const Expense = require('./models/expenses');
+const Order = require('./models/order');
 
 app.use(express.json())
 app.use(cors());
@@ -18,6 +19,9 @@ app.use('/user', userRoutes);
 
 User.hasMany(Expense);
 Expense.belongsTo(User);
+
+User.hasMany(Order);
+Order.belongsTo(User);
 
 const port = process.env.PORT || 1000;
 
