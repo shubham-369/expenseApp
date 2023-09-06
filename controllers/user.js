@@ -71,11 +71,14 @@ exports.login = async (req, res, next) => {
 exports.expense = async (req, res, next) => {
     const {price, description, category} = req.body;
     try{
+        const newTotalExpense = parseInt(req.user.totalExpense) + parseInt(price);
         await req.user.createExpense({
             price,
             description,
             category
         });
+        req.user.totalExpense = newTotalExpense;
+        await req.user.save();
         res.status(200).json({message: 'Expense added'});
     }
     catch(error) {
@@ -173,20 +176,8 @@ exports.paymentFailed = async (req, res, next) => {
 exports.showLeaderboards = async (req, res, next) => {
     try{
         const users = await User.findAll({
-            attributes: [
-                'id',
-                'username',
-                [
-                    sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col('expenses.price')), 0),
-                    'totalExpense'
-                ],
-            ],
-            include: [{
-                model: Expense,
-                attributes: [],
-            }],
-            group: ['users.id'],
-            order: [[sequelize.literal('totalExpense'), 'DESC']],
+            attributes: ['username', 'totalExpense'],
+            order: [[('totalExpense'), 'DESC']],
         });
         res.status(201).json(users);
     }
