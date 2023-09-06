@@ -8,7 +8,6 @@ const authenticate = async (req, res, next) => {
     }
     try{
         const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
         const user = await User.findByPk(decoded.userID);
         if(!user){
             res.status(401).json({message: 'Authentication Failed: User not exist!'});

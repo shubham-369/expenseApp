@@ -1,8 +1,10 @@
 const bcrypt = require('bcrypt');
 const generateToken = require('../util/jwt');
 const User = require('../models/user');
+const Expense = require('../models/expenses');
 const Order = require('../models/order');
 const Razorpay = require('razorpay');
+const sequelize = require('../util/database');
 
 exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -85,7 +87,7 @@ exports.expense = async (req, res, next) => {
 exports.getExpenses = async (req, res, next) => {
     try{
         const data = await req.user.getExpenses();
-        res.status(200).json(data);
+        res.status(200).json({ data, premiumUser: req.user.isPremiumUser });
     }
     catch(error){
         console.error('Failed to fetch expenses:', error);
@@ -147,16 +149,49 @@ exports.updateTransactionStatus = async (req, res, next) => {
         promise2 = req.user.update({isPremiumUser: true});
         Promise.all([promise1, promise2])
         .then(() => {res.status(202).json({message: 'Transaction Successful', success: true});})
-        .catch((error) => {throw new Error});
+        .catch((error) => {throw new Error(error)});
     }
     catch(error){        
         console.log('Error while making payment: ', error);
+        res.status(500).json({message: 'Transaction failed!'});
+    }
+};
 
-        try {
-            const order = await Order.findOne({ where: {orderID: order_id} });
-            order.update({status: 'FAILED'});
-        } catch (error) {
-            console.error('Error updating order status to "FAILED": ', error);
-        }
+exports.paymentFailed = async (req, res, next) => {
+    const ID = req.body.order_id;
+    try{
+        const order = await Order.findOne({ where: {orderID: ID} });
+        order.update({status: 'FAILED'});
+        res.status(200).json({message: 'Payment failed status updated'});
+    }
+    catch(error){
+        console.log('error while updating failed status: ', error);
+        res.status(500).json({message: 'Internal server error!'});
+    };
+};
+
+exports.showLeaderboards = async (req, res, next) => {
+    try{
+        const users = await User.findAll({
+            attributes: [
+                'id',
+                'username',
+                [
+                    sequelize.fn('COALESCE', sequelize.fn('SUM', sequelize.col('expenses.price')), 0),
+                    'totalExpense'
+                ],
+            ],
+            include: [{
+                model: Expense,
+                attributes: [],
+            }],
+            group: ['users.id'],
+            order: [[sequelize.literal('totalExpense'), 'DESC']],
+        });
+        res.status(201).json(users);
+    }
+    catch(error){
+        console.log('error while getting leaderboards: ', error);
+        res.status(500).json({message: 'Internal server error!'});
     }
 }

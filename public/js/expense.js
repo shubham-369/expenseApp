@@ -2,6 +2,9 @@
 const token = localStorage.getItem('token');
 const expenseForm = document.getElementById('expenseForm');
 const expenseList = document.getElementById('expenseList');
+const premium = document.getElementById('premium');
+const showLeaderboards = document.getElementById('showLeaderboards');
+const leaderboards = document.getElementById('Leaderboards');
 
 expenseForm.addEventListener('submit', async(e)=> {
     e.preventDefault();
@@ -19,7 +22,7 @@ expenseForm.addEventListener('submit', async(e)=> {
 
         expenseList.innerHTML= '';
         const response2 = await axios.get('/user/expenses', {headers: {"Authorization": token}});
-        const data = response2.data;
+        const data = response2.data.data;
         data.forEach(expense => {
             const li = document.createElement('li');
             li.innerHTML = `
@@ -36,12 +39,25 @@ expenseForm.addEventListener('submit', async(e)=> {
     }
 });
 
+function isPremium(p){            
+    if(p){
+        const h4 = document.createElement('h4');
+        h4.classList.add('text-light');
+        h4.textContent = 'You are a premium user now';
+        premium.parentElement.appendChild(h4);
+        premium.remove();
+
+        const leaderboardOption = showLeaderboards.parentElement;
+        leaderboardOption.classList.replace('none', 'leaderboards');
+    }
+};
+
 document.addEventListener('DOMContentLoaded', async() => {
-    const premium = document.getElementById('premium');
-    
+
     try{
         const response = await axios.get('/user/expenses', {headers: {"Authorization": token}});
-        const data = response.data;
+        const data = response.data.data;
+        isPremium(response.data.premiumUser);
 
         data.forEach(expense => {
             const li = document.createElement('li');
@@ -84,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async() => {
                     { order_id: options.order_id, payment_id: paymentResponse.razorpay_payment_id }, 
                     { headers: {"Authorization": token} })
                         .then((response) => {
-                            if(response.data.success){premium.remove()};
+                            isPremium(response.data.success);
                             alert("you are a premium user now"); 
                         })
                         .catch(error => { console.log('error transaction failed: ', error) });
@@ -94,10 +110,34 @@ document.addEventListener('DOMContentLoaded', async() => {
         catch(error){
             console.log('error while purchasing premium: ', error);
         }
-        const rzp1 = new Razorpay(options);
-        rzp1.open()
+        const rzp = new Razorpay(options);
+        rzp.open()
+        rzp.on('payment.failed', async function() {
+            try{
+                const response = await axios.post('/user/paymentFailed', { order_id: options.order_id}, { headers: {"Authorization": token} });
+                console.log(response.data.message);
+            }
+            catch(error){
+                console.log('Unable to update payment status: ', error);
+            }
+        });
+    });
+
+    showLeaderboards.addEventListener('click', async() => {
+        try{
+            const response = await axios.get('/user/showLeaderboards',{ headers: {"Authorization": token} });
+            const data = response.data;
+            leaderboards.innerHTML = '';
+            data.forEach(expense => {
+                const li = document.createElement('li');
+                li.innerHTML = `Name - ${expense.username} Total exense - ${expense.totalExpense}`;
+                leaderboards.appendChild(li);
+            });
+        }
+        catch(error){
+            console.log('error while loading leaderboards: ', error);
+        }
     });
 
 });
-
 
