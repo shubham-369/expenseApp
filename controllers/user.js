@@ -5,6 +5,7 @@ const Expense = require('../models/expenses');
 const Order = require('../models/order');
 const Razorpay = require('razorpay');
 const sequelize = require('../util/database');
+const sendInBlue = require('sib-api-v3-sdk');
 
 exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
@@ -214,4 +215,29 @@ exports.showLeaderboards = async (req, res, next) => {
         console.log('error while getting leaderboards: ', error);
         res.status(500).json({message: 'Internal server error!'});
     }
-}
+};
+
+exports.forgotPassword = async (req, res, next) => {
+    const {email} = req.body;
+
+    try{            
+        const client = sendInBlue.ApiClient.instance;
+        const apiKey = client.authentications['api-key'];
+        apiKey.apiKey = process.env.API_KEY;
+        const transactionalEmailApi = new sendInBlue.TransactionalEmailsApi();
+        const sender = {email:'shubham.srivastav666@gmail.com'};
+        const reciever = [ {email: email }]
+        
+        await transactionalEmailApi.sendTransacEmail({
+            sender,
+            to: reciever,
+            subject: 'Forgot password reset email',
+            textContent: 'this is the reset email'
+        });
+        res.status(200).json({message: 'Email sent'});
+    }
+    catch(error){
+        console.log('error while sending email: ', error);
+        res.status(500).json({message: 'Email does not exist'});
+    }
+};

@@ -21,4 +21,6 @@ router.post('/paymentFailed', authenticate, userControllers.paymentFailed);
 
 router.get('/showLeaderboards', authenticate, userControllers.showLeaderboards);
 
+router.post('/password/forgotPassword', userControllers.forgotPassword);
+
 module.exports = router;
