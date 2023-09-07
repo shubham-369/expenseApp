@@ -7,7 +7,7 @@ router.post('/signup', userControllers.signup);
 
 router.post('/login', userControllers.login);
 
-router.post('/expense',authenticate, userControllers.expense);
+router.post('/expense',authenticate, userControllers.addExpense);
 
 router.get('/expenses', authenticate, userControllers.getExpenses);
 
