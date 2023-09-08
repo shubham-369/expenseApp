@@ -5,6 +5,9 @@ const sequelize = require('./util/database');
 require('dotenv').config();
 
 const userRoutes = require('./routes/user');
+const premiumRoutes = require('./routes/premium');
+const passwordRoutes = require('./routes/password');
+const expenseRoutes = require('./routes/expense');
 
 const User = require('./models/user');
 const Expense = require('./models/expenses');
@@ -20,6 +23,9 @@ app.use(express.static('public'));
 app.use(express.static('views'));
 
 app.use('/user', userRoutes);
+app.use('/user', premiumRoutes);
+app.use('/user', passwordRoutes);
+app.use('/user', expenseRoutes);
 
 User.hasMany(Expense);
 Expense.belongsTo(User);

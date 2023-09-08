@@ -5,6 +5,7 @@ const expenseList = document.getElementById('expenseList');
 const premium = document.getElementById('premium');
 const showLeaderboards = document.getElementById('showLeaderboards');
 const leaderboards = document.getElementById('Leaderboards');
+const ul = document.getElementsByClassName('navbar-nav')[0];
 
 expenseForm.addEventListener('submit', async(e)=> {
     e.preventDefault();
@@ -46,6 +47,8 @@ function isPremium(p){
         h4.textContent = 'You are a premium user now';
         premium.parentElement.appendChild(h4);
         premium.remove();
+
+        ul.lastElementChild.classList.remove('none');
 
         const leaderboardOption = showLeaderboards.parentElement;
         leaderboardOption.classList.replace('none', 'leaderboards');
