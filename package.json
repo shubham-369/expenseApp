@@ -4,6 +4,7 @@
   "description": "Expense app",
   "main": "app.js",
   "dependencies": {
+    "aws-sdk": "^2.1454.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",

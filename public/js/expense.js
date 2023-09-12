@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', async() => {
             leaderboards.innerHTML = '';
             data.forEach(expense => {
                 const li = document.createElement('li');
-                li.innerHTML = `Name - ${expense.username} Total exense - ${expense.totalExpense}`;
+                li.innerHTML = `Name - ${expense.username} Total expense - ${expense.totalExpense}`;
                 leaderboards.appendChild(li);
             });
         }

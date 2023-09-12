@@ -1,3 +1,8 @@
+const bcrypt = require('bcrypt');
+const User = require('../models/user');
+const sequelize = require('../util/database');
+const sendInBlue = require('sib-api-v3-sdk');
+const forgotPasswordRequest = require('../models/forgotPassword');
 
 exports.forgotPassword = async (req, res, next) => {
     const {email} = req.body;
@@ -5,8 +10,7 @@ exports.forgotPassword = async (req, res, next) => {
     try{            
         const user = await User.findOne({where: {email: email}}, {transaction: t});
         if(!user){
-            res.status(404).json({message: 'Email does not exist'});
-            return;
+            return res.status(404).json({message: 'Email does not exist'});
         }
         const FP = await forgotPasswordRequest.create({userId: user.id}, {transaction: t});
         const resetId = FP.id;
@@ -14,9 +18,9 @@ exports.forgotPassword = async (req, res, next) => {
         const client = sendInBlue.ApiClient.instance;
         const apiKey = client.authentications['api-key'];
         apiKey.apiKey = process.env.API_KEY;
-        const transactionalEmailApi = new sendInBlue.TransactionalEmailsApi();
         const sender = {email:'shubham.srivastav666@gmail.com'};
         const reciever = [ {email: email }]
+        const transactionalEmailApi = new sendInBlue.TransactionalEmailsApi();
         
         await transactionalEmailApi.sendTransacEmail({
             sender,
@@ -106,12 +110,13 @@ exports.resetPassword = async (req, res, next) => {
                 
                             <label for="confirmPassword">Confirm Password:</label>
                             <input type="password" id="confirmPassword" name="confirmPassword" required>
+                            <h3 class="form-text" id="message"></h3>
                 
                             <button type="submit" class="btn">Reset Password</button>
                         </form>
                     </div>
                     <script async defer>
-                        document.addEventListener('DOMCONTENTLOADED', () => {
+                        document.addEventListener('DOMContentLoaded', () => {
                             const n = document.getElementById('newPassword')
                             const c = document.getElementById('confirmPassword');
                             c.addEventListener('input', () => {
@@ -132,6 +137,7 @@ exports.resetPassword = async (req, res, next) => {
         res.status(500).json({message: 'Link is not valid anymore!'});
     }
 };
+
 exports.updatePassword = async (req, res, next) => {
     const { newPassword } = req.body;
     const resetId = req.params.resetId;
@@ -147,22 +153,22 @@ exports.updatePassword = async (req, res, next) => {
                 if (error) {
                     await t.rollback();
                     console.error('Error generating salt: ', error);
-                    res.status(500).json({ message: 'Error while updating password' });
+                    return res.status(500).json({ message: 'Error while updating password' });
                 } else {
                     bcrypt.hash(newPassword, salt, async (error, hash) => {
                         if (error) {
                             await t.rollback();
                             console.error('Error hashing password: ', error);
-                            res.status(500).json({ message: 'Error while updating password' });
+                            return res.status(500).json({ message: 'Error while updating password' });
                         } else {
                             try {
                                 await user.update({ password: hash }, { transaction: t });
                                 await t.commit();
-                                res.status(201).json({ message: 'Password successfully updated' });
+                                return res.status(200).redirect('http://localhost:1000/login.html');
                             } catch (updateError) {
                                 await t.rollback();
                                 console.error('Error updating user password: ', updateError);
-                                res.status(500).json({ message: 'Error while updating password' });
+                                return res.status(500).json({ message: 'Error while updating password' });
                             }
                         }
                     });
@@ -170,11 +176,11 @@ exports.updatePassword = async (req, res, next) => {
             });
         } else {
             await t.rollback();
-            res.status(500).json({ message: 'No user exists for this reset request' });
+            return res.status(500).json({ message: 'No user exists for this reset request' });
         }
     } catch (error) {
         await t.rollback();
         console.error('Error in password update controller: ', error);
-        res.status(500).json({ message: 'Error while updating password' });
+        return res.status(500).json({ message: 'Error while updating password' });
     }
 };

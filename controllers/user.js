@@ -1,13 +1,6 @@
 const bcrypt = require('bcrypt');
 const generateToken = require('../util/jwt');
 const User = require('../models/user');
-const Expense = require('../models/expenses');
-const Order = require('../models/order');
-const Razorpay = require('razorpay');
-const sequelize = require('../util/database');
-const sendInBlue = require('sib-api-v3-sdk');
-const forgotPasswordRequest = require('../models/forgotPassword');
-const { reset } = require('nodemon');
 
 exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;

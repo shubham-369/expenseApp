@@ -13,6 +13,7 @@ const User = require('./models/user');
 const Expense = require('./models/expenses');
 const Order = require('./models/order');
 const forgotPasword = require('./models/forgotPassword');
+const ExpenseDownload = require('./models/expenseDownload');
 
 app.use(express.json())
 app.use(cors());
@@ -35,6 +36,9 @@ Order.belongsTo(User);
 
 User.hasMany(forgotPasword);
 forgotPasword.belongsTo(User);
+
+User.hasMany(ExpenseDownload);
+ExpenseDownload.belongsTo(User);
 
 const port = process.env.PORT || 1000;
 
