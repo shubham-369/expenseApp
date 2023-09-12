@@ -6,76 +6,78 @@ const premium = document.getElementById('premium');
 const showLeaderboards = document.getElementById('showLeaderboards');
 const leaderboards = document.getElementById('Leaderboards');
 const ul = document.getElementsByClassName('navbar-nav')[0];
+const pagination = document.getElementById('pagination-buttons');
+let currentPage = 1;
 
-expenseForm.addEventListener('submit', async(e)=> {
-    e.preventDefault();
-
-    const formdata = new FormData(e.target);
-    const jsondata = {};
-
-    formdata.forEach((value, key) => {
-        jsondata[key] = value;
-    });
-
-    try{
-        const response = await axios.post('/user/expense', jsondata, {headers: {"Authorization": token}});
-        console.log('expense added :', response.data.message);
-
-        expenseList.innerHTML= '';
-        const response2 = await axios.get('/user/expenses', {headers: {"Authorization": token}});
-        const data = response2.data.data;
-        data.forEach(expense => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-            ₹ ${expense.price} - ${expense.description} - ${expense.category}
-            <button data-id="${expense.id}" class="btn btn-danger delete">Delete expense</button>
-            `;
-            expenseList.appendChild(li);
-        });
-
-        expenseForm.reset();
-    }
-    catch(error){
-        console.log('error while adding expense :', error);
-    }
-});
-
-function isPremium(p){            
-    if(p){
-        const h4 = document.createElement('h4');
-        h4.classList.add('text-light');
-        h4.textContent = 'You are a premium user now';
-        premium.parentElement.appendChild(h4);
-        premium.remove();
-
-        ul.lastElementChild.classList.remove('none');
-
-        const leaderboardOption = showLeaderboards.parentElement;
-        leaderboardOption.classList.replace('none', 'leaderboards');
-    }
-};
 
 document.addEventListener('DOMContentLoaded', async() => {
 
-    try{
-        const response = await axios.get('/user/expenses', {headers: {"Authorization": token}});
-        const data = response.data.data;
-        isPremium(response.data.premiumUser);
-
-        data.forEach(expense => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-            ₹ ${expense.price} - ${expense.description} - ${expense.category}
-            <button data-id="${expense.id}" class="btn btn-danger delete">Delete expense</button>
-            `;
-            expenseList.appendChild(li);
-        });
-    }
-    catch(error){
-        console.log('error while getting expenses :', error);
-    }
-
         
+    function isPremium(p){            
+        if(p){
+            if(premium.style.display !== 'none'){
+                const h4 = document.createElement('h4');
+                h4.classList.add('text-light');
+                h4.textContent = 'You are a premium user now';
+                premium.parentElement.appendChild(h4);
+                premium.style.display = 'none';
+            }
+            ul.lastElementChild.classList.remove('none');
+
+            const leaderboardOption = showLeaderboards.parentElement;
+            leaderboardOption.classList.replace('none', 'leaderboards');
+        }
+    };
+
+    function addExpense(expense){
+        const li = document.createElement('li');
+        li.innerHTML = `
+        ₹ ${expense.price} - ${expense.description} - ${expense.category}
+        <button data-id="${expense.id}" class="btn btn-danger delete">Delete expense</button>
+        `;
+        expenseList.appendChild(li);
+    }
+
+    function renderPaginationButtons(totalPages){
+        for (let i = 1; i <= totalPages; i++) {
+            const button = document.createElement('button');
+            button.textContent = i;
+            button.addEventListener('click', () => {
+                currentPage = i;
+                fetchExpenses(currentPage);
+            });
+
+            if (i === currentPage) {
+                button.classList.add('active');
+            }
+
+            pagination.appendChild(button);
+        }
+    };
+
+    async function fetchExpenses(page){
+        expenseList.innerHTML= '';
+        pagination.innerHTML= '';
+        try{
+            console.log(page);
+            const response = await axios.get(`/user/expenses?pageNumber=${page}`, {headers: {"Authorization": token}});
+            
+            const data = response.data.expenses;
+            await data.forEach(expense => {
+                addExpense(expense);
+            });
+            isPremium(response.data.premiumUser);
+            const totalPages = response.data.totalPages;
+            renderPaginationButtons(totalPages);
+        }
+        catch(error){
+            console.log('Error while fetching expenses! ', error);
+        }
+    }
+
+
+    fetchExpenses(1);
+    
     expenseList.addEventListener('click', async(e) => {
         if(e.target.classList.contains('delete')){
             const id = e.target.getAttribute('data-id');
@@ -141,6 +143,35 @@ document.addEventListener('DOMContentLoaded', async() => {
             console.log('error while loading leaderboards: ', error);
         }
     });
+
+        
+
+    expenseForm.addEventListener('submit', async(e)=> {
+        e.preventDefault();
+
+        const formdata = new FormData(e.target);
+        const jsondata = {};
+
+        formdata.forEach((value, key) => {
+            jsondata[key] = value;
+        });
+
+        try{
+            const response = await axios.post('/user/expense', jsondata, {headers: {"Authorization": token}});
+            console.log('expense added :', response.data.message);
+
+            expenseList.innerHTML= '';
+            pagination.innerHTML= '';
+            fetchExpenses(1);
+
+            expenseForm.reset();
+        }
+        catch(error){
+            console.log('error while adding expense :', error);
+        }
+    });
+
+
 
 });
 
