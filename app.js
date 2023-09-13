@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const sequelize = require('./util/database');
+const helmet = require('helmet');
+const fs = require('fs');
+const morgan = require('morgan');
 require('dotenv').config();
 
 const userRoutes = require('./routes/user');
@@ -15,13 +18,16 @@ const Order = require('./models/order');
 const forgotPasword = require('./models/forgotPassword');
 const ExpenseDownload = require('./models/expenseDownload');
 
+const accessLogStream = fs.createWriteStream('./access.log', {flags: 'a'});
+
 app.use(express.json())
 app.use(cors());
-
+app.use(helmet());
 app.use(express.urlencoded({extended: true}));
-
 app.use(express.static('public'));
 app.use(express.static('views'));
+
+app.use(morgan('combined', {stream: accessLogStream}));
 
 app.use('/user', userRoutes);
 app.use('/user', premiumRoutes);
