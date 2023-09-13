@@ -2,9 +2,9 @@ const userId = (req) => {
     return req.user.id;
 };
 
-const getExpenses = async (req, where, limit, offset) => {
+const getExpenses = async (req, limit, offset) => {
+    
     const expenses = await req.user.getExpenses({
-        where,
         offset,
         limit,
         order: [['createdAt', 'DESC']]
@@ -13,7 +13,10 @@ const getExpenses = async (req, where, limit, offset) => {
     const totalPages = Math.ceil(totalExpense / limit);
     return { expenses, totalPages };
 };
-
+const getExpensesId = async (req, where) => {
+    const expenses = await req.user.getExpenses(where);
+    return expenses;
+};
 const totalExpense = (req) => {
     return req.user.totalExpense;
 };
@@ -26,9 +29,7 @@ const createExpense = async (req, price, description, category) => {
     });
     return expense;
 };
-const save = (req) => {
-    return req.user.save();
-}
+
 
 const createExpenseDownload = async (req, fileURL) => {
     const expenseDownload = await req.user.createExpenseDownload({ url: fileURL });
@@ -48,8 +49,8 @@ module.exports = {
     getExpenses,
     totalExpense,
     createExpense,
-    save,
     createExpenseDownload,
     isPremiumUser,
-    updateExpense
+    updateExpense,
+    getExpensesId
 };

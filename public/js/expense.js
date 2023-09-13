@@ -7,12 +7,13 @@ const showLeaderboards = document.getElementById('showLeaderboards');
 const leaderboards = document.getElementById('Leaderboards');
 const ul = document.getElementsByClassName('navbar-nav')[0];
 const pagination = document.getElementById('pagination-buttons');
+const rows = document.getElementById('rows');
 let currentPage = 1;
 
 
 document.addEventListener('DOMContentLoaded', async() => {
 
-        
+    
     function isPremium(p){            
         if(p){
             if(premium.style.display !== 'none'){
@@ -44,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async() => {
             button.textContent = i;
             button.addEventListener('click', () => {
                 currentPage = i;
-                fetchExpenses(currentPage);
+                fetchExpenses(currentPage, rows.value);
             });
 
             if (i === currentPage) {
@@ -55,14 +56,14 @@ document.addEventListener('DOMContentLoaded', async() => {
         }
     };
 
-    async function fetchExpenses(page){
+    async function fetchExpenses(page, rowsPerPage){
         expenseList.innerHTML= '';
         pagination.innerHTML= '';
         try{
-            console.log(page);
-            const response = await axios.get(`/user/expenses?pageNumber=${page}`, {headers: {"Authorization": token}});
+            const response = await axios.get(`/user/expenses?pageNumber=${page}&rows=${rowsPerPage}`, {headers: {"Authorization": token}});
             
             const data = response.data.expenses;
+            
             await data.forEach(expense => {
                 addExpense(expense);
             });
@@ -73,10 +74,15 @@ document.addEventListener('DOMContentLoaded', async() => {
         catch(error){
             console.log('Error while fetching expenses! ', error);
         }
-    }
+    };
+
+    rows.addEventListener('change', () => {
+        const perPage = rows.value;
+        fetchExpenses(currentPage, perPage);
+    });
 
 
-    fetchExpenses(1);
+    fetchExpenses(currentPage, rows.value);
     
     expenseList.addEventListener('click', async(e) => {
         if(e.target.classList.contains('delete')){
@@ -84,6 +90,7 @@ document.addEventListener('DOMContentLoaded', async() => {
             try{
                 const response = await axios.delete(`/user/deleteExpense?id=${id}`, {headers: {"Authorization": token}});
                 console.log(response.data.message);
+                fetchExpenses(currentPage, rows.value);
 
                 e.target.parentElement.remove();
             }
@@ -162,7 +169,7 @@ document.addEventListener('DOMContentLoaded', async() => {
 
             expenseList.innerHTML= '';
             pagination.innerHTML= '';
-            fetchExpenses(1);
+            fetchExpenses(currentPage, rows.value);
 
             expenseForm.reset();
         }
