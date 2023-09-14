@@ -1,5 +1,5 @@
 {
-  "name": "expenseapp",
+  "name": "expensebackend",
   "version": "1.0.0",
   "description": "Expense app",
   "main": "app.js",

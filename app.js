@@ -24,8 +24,6 @@ app.use(express.json())
 app.use(cors());
 app.use(helmet());
 app.use(express.urlencoded({extended: true}));
-app.use(express.static('public'));
-app.use(express.static('views'));
 
 app.use(morgan('combined', {stream: accessLogStream}));
 
