@@ -1,11 +1,11 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const sequelize = require('./util/database');
 const helmet = require('helmet');
 const fs = require('fs');
 const morgan = require('morgan');
 require('dotenv').config();
+const sequelize = require('./util/database');
 
 const userRoutes = require('./routes/user');
 const premiumRoutes = require('./routes/premium');
