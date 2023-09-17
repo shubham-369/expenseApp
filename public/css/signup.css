@@ -1,0 +1,11 @@
+a{
+    display: flex;
+    justify-content: center;
+}
+a:hover{
+    text-decoration: none;
+}
+
+.active{
+    color: white;
+}

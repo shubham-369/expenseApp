@@ -3,6 +3,7 @@ const User = require('../models/user');
 const sequelize = require('../util/database');
 const sendInBlue = require('sib-api-v3-sdk');
 const forgotPasswordRequest = require('../models/forgotPassword');
+const crypto = require('crypto');
 
 exports.forgotPassword = async (req, res, next) => {
     const {email} = req.body;
@@ -26,7 +27,7 @@ exports.forgotPassword = async (req, res, next) => {
             sender,
             to: reciever,
             subject: 'Forgot password reset email',
-            htmlContent: `<p>Click the following link to reset your password: <a href="http://localhost:1000/user/password/resetPassword/${resetId}">Reset password</a></p>`
+            htmlContent: `<p>Click the following link to reset your password: <a href="http://localhost:3000/user/password/resetPassword/${resetId}">Reset password</a></p>`
         });
         await t.commit();
         res.status(200).json({message: 'Email sent'});
@@ -40,10 +41,12 @@ exports.forgotPassword = async (req, res, next) => {
 
 exports.resetPassword = async (req, res, next) => {
     const {resetId} = req.params;
+    const nonce = crypto.randomBytes(16).toString('base64');
     try{
         const request = await forgotPasswordRequest.findOne({where: {id: resetId}});
         if(request.isActive){
-            request.update({isActive: false})
+            await request.update({isActive: false});
+            res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self' 'nonce-${nonce}';`);
             res.status(200).send(`
             <!DOCTYPE html>
             <html>
@@ -53,7 +56,7 @@ exports.resetPassword = async (req, res, next) => {
                     <title></title>
                     <meta name="description" content="">
                     <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
+                <style nonce="${nonce}">
                     body {
                         font-family: Arial, sans-serif;
                         background-color: #f2f2f2;
@@ -104,7 +107,7 @@ exports.resetPassword = async (req, res, next) => {
                 <body>
                     <div class="container">
                         <h2>Password Reset</h2>
-                        <form action="/user/password/updatePassword/${resetId}" method="POST">
+                        <form action="/user/password/updatePassword/${resetId}" method="POST" nonce="${nonce}">
                             <label for="newPassword">New Password:</label>
                             <input type="password" id="newPassword" name="newPassword" required>
                 
@@ -115,7 +118,7 @@ exports.resetPassword = async (req, res, next) => {
                             <button type="submit" class="btn">Reset Password</button>
                         </form>
                     </div>
-                    <script async defer>
+                    <script nonce="${nonce}">
                         document.addEventListener('DOMContentLoaded', () => {
                             const n = document.getElementById('newPassword')
                             const c = document.getElementById('confirmPassword');

@@ -59,11 +59,11 @@ exports.deleteExpense = async (req, res, next) => {
 
 
 
-exports.downloadExpenses = async (req, res, next) => {
+exports.downloadExpenses = async (req, res, next) => {    
+    const t = await sequelize.transaction();
     try{
-        const t = await sequelize.transaction();
-        const expenses = await userServices.getExpenses(req, {transaction: t});
-        const StringifiedExpenses = JSON.stringify(expenses.expenses);
+        const expenses = await userServices.getExpensesId(req, {transaction: t});
+        const StringifiedExpenses = JSON.stringify(expenses);
         const filename = `Expense ${userServices.userId(req)}_${new Date()}.txt`;
         const fileURL = await uploadToS3(StringifiedExpenses, filename);
         await userServices.createExpenseDownload(req, fileURL, {transaction: t});

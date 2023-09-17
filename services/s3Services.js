@@ -21,6 +21,7 @@ function uploadToS3(data, filename){
     return new Promise((resolve, reject) => {   
         s3bucket.upload(params, (err, response) => { 
             if(err){
+                console.log(err);
                 reject('error while uploading expenses to AWS!: ',err);
             }else{
                 resolve(response.Location);

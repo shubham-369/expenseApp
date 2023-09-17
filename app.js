@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const cors = require('cors');
@@ -5,7 +6,7 @@ const sequelize = require('./util/database');
 const helmet = require('helmet');
 const fs = require('fs');
 const morgan = require('morgan');
-require('dotenv').config();
+const path = require('path');
 
 const userRoutes = require('./routes/user');
 const premiumRoutes = require('./routes/premium');
@@ -22,8 +23,17 @@ const accessLogStream = fs.createWriteStream('./access.log', {flags: 'a'});
 
 app.use(express.json())
 app.use(cors());
-app.use(helmet());
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", 'cdnjs.cloudflare.com', 'code.jquery.com', 'cdn.jsdelivr.net', 'checkout.razorpay.com'],            
+            frameSrc: ["'self'", 'https://api.razorpay.com'],
+        },
+    })
+);
 app.use(express.urlencoded({extended: true}));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(morgan('combined', {stream: accessLogStream}));
 
@@ -31,6 +41,9 @@ app.use('/user', userRoutes);
 app.use('/user', premiumRoutes);
 app.use('/user', passwordRoutes);
 app.use('/user', expenseRoutes);
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, `public/${req.url}`));
+});
 
 User.hasMany(Expense);
 Expense.belongsTo(User);
@@ -44,7 +57,7 @@ forgotPasword.belongsTo(User);
 User.hasMany(ExpenseDownload);
 ExpenseDownload.belongsTo(User);
 
-const port = process.env.PORT || 1000;
+const port = process.env.PORT || 3000;
 
 sequelize
 .sync()
