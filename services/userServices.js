@@ -9,6 +9,10 @@ const getExpenses = async (req, limit, offset) => {
         limit,
         order: [['createdAt', 'DESC']]
     });
+    
+    if(!expenses){
+        return null;
+    }
     const totalExpense = await req.user.countExpenses();
     const totalPages = Math.ceil(totalExpense / limit);
     return { expenses, totalPages };

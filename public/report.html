@@ -16,7 +16,6 @@
   <body>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-info">
-        <a class="navbar-brand" href="#">Navbar</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -40,43 +39,41 @@
 
       <div class="container text-center">
         <h1 class="my-5">Day to Day Expenses</h1>
-        <h3 class="my-5">2023</h3>
+
+        <div class="form-group">
+          <label for="year">Enter a Year:</label>
+          <input type="number" class="form-control" id="year" name="year" min="2023" max="2099" step="1" value="2023">
+          
+          <label for="month">Select a Month:</label>
+          <select id="month" class="form-control" name="month">
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select> 
+        
+        </div>
 
         <div class="text-center">
-            <h5 class="my-3">September 2023</h5>
-
+          <h5 class="my-5">Month Expenses</h5>
             <table class="table table-bordered">
                 <thead class="thead bg-info text-light">
                   <tr>
                     <th scope="col">Date</th>
                     <th scope="col">Description</th>
                     <th scope="col">Category</th>
-                    <th scope="col">Income</th>
                     <th scope="col">Expense</th>
                   </tr>
                 </thead>
                 <tbody id="monthReport">
-                  <tr>
-                    <td class="text-left">09-08-2023</td>
-                    <td class="text-left">Mark</td>
-                    <td class="text-left">Otto</td>
-                    <td class="text-right">@mdo</td>
-                    <td class="text-right">Expense</td>
-                  </tr>
-                  <tr>
-                    <td class="text-left">09-08-2023</td>
-                    <td class="text-left">Jacob</td>
-                    <td class="text-left">Thornton</td>
-                    <td class="text-right">@fat</td>
-                    <td class="text-right">Expense</td>
-                  </tr>
-                  <tr>
-                    <td class="text-left">09-08-2023</td>
-                    <td class="text-left">Larry</td>
-                    <td class="text-left">the Bird</td>
-                    <td class="text-right">@twitter</td>
-                    <td class="text-right">Expense</td>
-                  </tr>
                 </tbody>
               </table>
         </div>
@@ -88,25 +85,11 @@
             <table class="table table-bordered">
                 <thead class="thead bg-info text-light">
                   <tr>
-                    <th scope="col">Month</th>
-                    <th scope="col">Income</th>
+                    <th scope="col">Year</th>
                     <th scope="col">Expense</th>
-                    <th scope="col">Savings</th>
                   </tr>
                 </thead>
                 <tbody id="yearlyReport">
-                  <tr>
-                    <td class="text-left">September</td>
-                    <td class="text-right">Mark</td>
-                    <td class="text-right">Otto</td>
-                    <td class="text-right">@mdo</td>
-                  </tr>
-                  <tr>
-                    <td class="text-left"></td>
-                    <td class="text-right">Jacob</td>
-                    <td class="text-right">Thornton</td>
-                    <td class="text-right">Expense</td>
-                  </tr>
                 </tbody>
               </table>
         </div>

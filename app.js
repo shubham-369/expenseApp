@@ -4,8 +4,6 @@ const app = express();
 const cors = require('cors');
 const sequelize = require('./util/database');
 const helmet = require('helmet');
-const fs = require('fs');
-const morgan = require('morgan');
 const path = require('path');
 
 const userRoutes = require('./routes/user');
@@ -18,8 +16,7 @@ const Expense = require('./models/expenses');
 const Order = require('./models/order');
 const forgotPasword = require('./models/forgotPassword');
 const ExpenseDownload = require('./models/expenseDownload');
-
-const accessLogStream = fs.createWriteStream('./access.log', {flags: 'a'});
+const TotalYearExpense = require('./models/totalYearExpense');
 
 app.use(express.json())
 app.use(cors());
@@ -34,8 +31,6 @@ app.use(
 );
 app.use(express.urlencoded({extended: true}));
 app.use(express.static(path.join(__dirname, 'public')));
-
-app.use(morgan('combined', {stream: accessLogStream}));
 
 app.use('/user', userRoutes);
 app.use('/user', premiumRoutes);
@@ -56,6 +51,9 @@ forgotPasword.belongsTo(User);
 
 User.hasMany(ExpenseDownload);
 ExpenseDownload.belongsTo(User);
+
+User.hasMany(TotalYearExpense);
+TotalYearExpense.belongsTo(User);
 
 const port = process.env.PORT || 3000;
 

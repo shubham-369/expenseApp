@@ -2,3 +2,7 @@
 .active{
     color: white;
 }
+#month, #year{
+    display: inline;
+    width: 9rem;
+}

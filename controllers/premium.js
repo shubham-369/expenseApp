@@ -87,7 +87,7 @@ exports.showLeaderboards = async (req, res, next) => {
     try{
         const users = await User.findAll({
             attributes: ['username', 'totalExpense'],
-            order: [[('totalExpense'), 'DESC']],
+            order: [['totalExpense', 'DESC']],
         });
         res.status(201).json(users);
     }

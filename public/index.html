@@ -18,7 +18,6 @@
   <body>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-info">
-        <a class="navbar-brand" href="#">Navbar</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -43,7 +42,12 @@
         </div>
       </nav>
 
-      
+    <div class="overlay">
+      <div class="bg-light w-50 h-50">
+        <h1>Your session has expired please login again</h1>
+        <a class="btn btn-primary" href="./login.html">Login</a>
+      </div>
+    </div>
     <div class="container">
         <div class="row py-5">
             <div class="col-12">
@@ -75,19 +79,22 @@
   
             </div>
 
-            <div class="col-7 expense">
+            <div class="col-md-7 col-12 expense">
               <h1>Your Expenses</h1>
-              <label for="rows">Rows per page: </label>
-              <select name="rows" id="rows">
-                <option value=5>5</option>
-                <option value=10>10</option>
-                <option value=15>15</option>
-                <option value=20>20</option>
-                <option value=25>25</option>
-                <option value=30>30</option>
-                <option value=35>35</option>
-                <option value=40>40</option>
-              </select>
+              <div class="form-group">
+                <label for="rows">Rows per page: </label>
+                <select name="rows" class="form-control" id="rows">
+                  <option value=5>5</option>
+                  <option value=10>10</option>
+                  <option value=15>15</option>
+                  <option value=20>20</option>
+                  <option value=25>25</option>
+                  <option value=30>30</option>
+                  <option value=35>35</option>
+                  <option value=40>40</option>
+                </select>
+              </div>
+
               <div>
                   <ul id="expenseList">
                   </ul>
@@ -96,7 +103,7 @@
               </div>
             </div>
 
-            <div class="col-5 none">
+            <div class="col-md-5 col-12 none">
               <h1>Leaderboards</h1>
               <div>
                   <ul id="Leaderboards">
