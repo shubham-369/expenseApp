@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
     
     month.addEventListener('change', async()=> {
         try{
-            const response = await axios.get(`http://localhost:3000/user/report?year=${year.value}&month=${month.value}`, {headers: {"Authorization": token}});
+            const response = await axios.get(`http://13.208.169.65:3000/user/report?year=${year.value}&month=${month.value}`, {headers: {"Authorization": token}});
             
             monthReport(response.data.MonthExpenses);
             yearReport(response.data.YearExpense.totalExpense);
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', ()=> {
 
     download.addEventListener('click', async () => {
         try{
-            const response = await axios.get('http://localhost:3000/user/downloadExpenses', {headers: {"Authorization": token}});
+            const response = await axios.get('http://13.208.169.65:3000/user/downloadExpenses', {headers: {"Authorization": token}});
             const a = document.createElement('a');
             a.href = response.data.fileURL;
             a.download = 'Expenses.txt';
