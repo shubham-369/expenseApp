@@ -19,17 +19,14 @@ const ExpenseDownload = require('./models/expenseDownload');
 const TotalYearExpense = require('./models/totalYearExpense');
 
 app.use(cors());
+app.use(express.json());
 
 app.use(express.static(path.join(__dirname, 'public')));
     
-    app.use(express.json());
 app.use('/user', userRoutes);
 app.use('/user', premiumRoutes);
 app.use('/user', passwordRoutes);
 app.use('/user', expenseRoutes);
-// app.use((req, res) => {/
-//     res.sendFile(path.join(__dirname, `public/${req.url}`));
-// });
 
 User.hasMany(Expense);
 Expense.belongsTo(User);
