@@ -27,7 +27,7 @@ exports.forgotPassword = async (req, res, next) => {
             sender,
             to: reciever,
             subject: 'Forgot password reset email',
-            htmlContent: `<p>Click the following link to reset your password: <a href="http://localhost:3000/user/password/resetPassword/${resetId}">Reset password</a></p>`
+            htmlContent: `<p>Click the following link to reset your password: <a href="http://13.208.169.65:3000/user/password/resetPassword/${resetId}">Reset password</a></p>`
         });
         await t.commit();
         res.status(200).json({message: 'Email sent'});
@@ -167,7 +167,7 @@ exports.updatePassword = async (req, res, next) => {
                             try {
                                 await user.update({ password: hash }, { transaction: t });
                                 await t.commit();
-                                return res.status(200).redirect('http://localhost:1000/login.html');
+                                return res.status(200).redirect('http://13.208.169.65:1000/login.html');
                             } catch (updateError) {
                                 await t.rollback();
                                 console.error('Error updating user password: ', updateError);

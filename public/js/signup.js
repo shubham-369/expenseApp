@@ -13,7 +13,7 @@ if (signupForm){
         });
 
         try{
-            const response = await axios.post('http://localhost:3000/user/signup', jsondata);
+            const response = await axios.post('http://13.208.169.65:3000/user/signup', jsondata);
             console.log('Data saved! ', response.data);
             signupForm.reset();
         }
