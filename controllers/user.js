@@ -6,8 +6,8 @@ exports.signup = async (req, res, next) => {
     const { username, email, password } = req.body;
     const saltRounds = 10;
     try {
-        const existingUsername = await User.findAll({ where: { username: username} });
-        const existingemail = await User.findAll({ where: { email: email } });
+        const existingUsername = await User.find({ username: username });
+        const existingemail = await User.find({ email: email  });
 
         if (existingUsername.length > 0) {
             res.status(403).json({ message: 'Username already exists' });
@@ -20,11 +20,14 @@ exports.signup = async (req, res, next) => {
                     throw new err;
                 }
                 else{                            
-                    User.create({
+                    const newUser = new User({
                         username: username,
                         email: email,
-                        password: hashedPassword
+                        password: hashedPassword,
+                        totalExpense: 0,
+                        isPremiumUser: false
                     })
+                    newUser.save()
                     .then(() => {
                         res.status(200).json({ message: 'User created' });
                     })
@@ -44,20 +47,20 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ where: { email: email } });
+        const user = await User.findOne({ email: email });
 
         if (!user) {
-            res.status(404).json({ message: 'Email does not exist' });
-        } else {
-            const result = await bcrypt.compare(password, user.password);
-
-            if (result) {
-                const token = generateToken(user);
-                res.status(200).json({ message: 'Log in successfully!', token});
-            } else {
-                res.status(401).json({ message: 'Wrong password' });
-            }
+            return res.status(404).json({ message: 'Email does not exist' });
         }
+        const result = await bcrypt.compare(password, user.password);
+
+        if (result) {
+            const token = generateToken(user);
+            return res.status(200).json({ message: 'Log in successfully!', token});
+        } 
+        res.status(401).json({ message: 'Wrong password' });
+    
+    
     } catch (error) {
         console.error('Failed to login:', error);
         res.status(500).json({ message: 'Failed to login' });

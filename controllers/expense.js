@@ -1,7 +1,9 @@
 const {uploadToS3} = require('../services/s3Services');
 let userServices = require('../services/userServices');
-const sequelize = require('../util/database');
-const Sequelize = require('sequelize');
+const mongoose = require('mongoose');
+const Expense = require('../models/expenses');
+const Download = require('../models/expenseDownload');
+const User = require('../models/user');
 
 exports.session = (req, res, next) => {
     res.status(200).json({session: true});
@@ -13,25 +15,42 @@ exports.addExpense = async (req, res, next) => {
 
     try {
         // Check if a yearly expense entry exists for the current year
-        let yearlyExpense = await req.user.getYearlyExpenses({ where: { year: year } });
+        let totalYear = await yearlyExpense.findOne({  year: year  });
 
-        if (yearlyExpense.length === 0) {
+        if (totalYear.length === 0) {
             // If no entry exists, create one
-            yearlyExpense = await req.user.createYearlyExpense({ year: year, totalExpense: price });
+            totalYear = new yearlyExpense({ 
+                year: year, 
+                totalExpense: price,
+                user: req.user._id 
+            });
+            await totalYear.save();
         } else {
             // If an entry exists, update the total expense
-            const newYearlyExpense = parseFloat(yearlyExpense[0].totalExpense) + parseFloat(price);
-            await yearlyExpense[0].update({ totalExpense: newYearlyExpense });
+            const newYearlyExpense = totalYear.totalExpense + parseInt(price);
+            await yearlyExpense.updateOne(
+                { user: req.user._id },
+                { $set: { totalExpense: newYearlyExpense } }
+            );
         }
 
         // Calculate the new total expense for the user
-        const newTotalExpense = parseFloat(userServices.totalExpense(req)) + parseFloat(price);
+        const newTotalExpense = req.user.totalExpense + parseInt(price);
 
         // Create the expense entry
-        await userServices.createExpense(req, price, description, category);
+        const expense = new Expense({
+            price: price,
+            description: description,
+            category: category,
+            user: req.user
+        })
+        await expense.save();
 
         // Update the user's total expense
-        await userServices.updateExpense(req, newTotalExpense);
+        await User.updateOne(
+            { _id: req.user._id },
+            { $set: {totalExpense: newTotalExpense} }
+        )
 
         res.status(200).json({ message: 'Expense added' });
     } catch (error) {
@@ -46,13 +65,22 @@ exports.getExpenses = async (req, res, next) => {
     try{
         const page = pageNumber || 1;
         const limit = parseInt(rows) || 5;
-        const offset = (page - 1) * limit;
-        const data = await userServices.getExpenses(req, limit, offset);
+        const skip = (page - 1) * limit;
+        const expenses = await Expense.find({ user: req.user._id })
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: 'desc' });
+    
+        // Calculate the total number of expenses for the user.
+        const totalExpense = await Expense.countDocuments({ user: req.user._id });
+    
+        // Calculate the total number of pages based on the limit and total expenses.
+        const totalPages = Math.ceil(totalExpense / limit);
         
-        if(data === null){
+        if(expenses === null){
             return res.status(404).json({message: 'No expenses to show!'});
         }
-        res.status(200).json({ expenses: data.expenses, totalPages: data.totalPages, premiumUser: userServices.isPremiumUser(req)});
+        res.status(200).json({ expenses: expenses, totalPages: totalPages, premiumUser: req.user.isPremiumUser});
     }
     catch(error){
         console.error('Failed to fetch expenses:', error);
@@ -61,41 +89,54 @@ exports.getExpenses = async (req, res, next) => {
 };
 
 exports.deleteExpense = async (req, res, next) => {
-    const t = await sequelize.transaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
     const {id} = req.query;
     try{
-        const expenses = await userServices.getExpensesId(req, {where: {id: id}},{transaction: t});
+        const expense = await Expense.findByIdAndDelete({_id: id}, session);
 
-        const expensePrice = parseFloat(expenses[0].price);
-        const newTotalExpense = parseFloat(userServices.totalExpense(req)) - expensePrice;
-        await userServices.updateExpense(req, newTotalExpense, {transaction: t});
-        await expenses[0].destroy({transaction: t});
+        const newTotalExpense = req.user.totalExpense - expense.price;
+        await User.updateOne(
+            {_id: req.user._id},
+            { $set: {totalExpense: newTotalExpense }},
+            session
+        );
 
-        await t.commit();
+        await session.commitTransaction();
+        session.endSession();
         res.status(200).json({message: 'Expense deleted'});
     }
     catch(error){
-        await t.rollback();
+        await session.abortTransaction();
+        session.endSession();
         console.error('Failed to delete expense:', error);
         res.status(500).json({message: 'Error while deleting expense'});
     }
 };
 
 exports.downloadExpenses = async (req, res, next) => {    
-    const t = await sequelize.transaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try{
-        const expenses = await userServices.getExpensesId(req, {transaction: t});
+        const expenses = await Expense.find({ user: req.user._id });
         const StringifiedExpenses = JSON.stringify(expenses);
-        const filename = `Expense ${userServices.userId(req)}_${new Date()}.txt`;
+        const filename = `Expense ${req.user._id}_${new Date()}.txt`;
         const fileURL = await uploadToS3(StringifiedExpenses, filename);
-        await userServices.createExpenseDownload(req, fileURL, {transaction: t});
+        const download = new Download({ 
+            url: fileURL,
+            user: req.user._id,
+            session 
+        });
+        await download.save();
 
-        await t.commit();
+        await session.commitTransaction();
+        session.endSession();
         res.status(201).json({fileURL});
 
     }
     catch(error){
-        await t.rollback();
+        await session.abortTransaction();
+        session.endSession();
         console.log('error while downloading expenses: ', error);
         res.status(500).json({message: 'Internal server error!'});
     }
@@ -104,13 +145,11 @@ exports.downloadExpenses = async (req, res, next) => {
 exports.report = async (req, res, next) => {
     const {year, month} = req.query;
     try{
-        const YearExpenses = await req.user.getYearlyExpenses({
-            where: {year: year},
-            attributes: ['totalExpense'],
+        const YearExpenses = await yearlyExpense.findOne({
+                user: req.user.id,
+                year: year
         });
-        const monthlyExpenses = await req.user.getExpenses({
-            where: Sequelize.literal(`MONTH(createdAt) = ${month}`)
-        });
+        const monthlyExpenses = await yearlyExpense.find({ month});
         res.status(200).json({YearExpense: YearExpenses[0], MonthExpenses: monthlyExpenses});
     }
     catch(error){

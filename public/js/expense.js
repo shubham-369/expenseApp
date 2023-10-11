@@ -14,11 +14,11 @@ let currentPage = 1;
 
 document.addEventListener('DOMContentLoaded', async() => {
 
-    try{
-        const response = await axios.get('http://13.208.169.65:3000/user/session', {headers: {"Authorization": token}});
-        if(response.data.session){
-            overlay.style.display = 'none';
-            document.body.classList.remove('overlay-open');
+    // try{
+        // const response = await axios.get('/user/session', {headers: {"Authorization": token}});
+        // if(response.data.session){
+            // overlay.style.display = 'none';
+            // document.body.classList.remove('overlay-open');
 
             function isPremium(p){            
                 if(p){
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async() => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                 ₹ ${expense.price} - ${expense.description} - ${expense.category}
-                <button data-id="${expense.id}" class="btn btn-danger delete">Delete expense</button>
+                <button data-id="${expense._id}" class="btn btn-danger delete">Delete expense</button>
                 `;
                 expenseList.appendChild(li);
             }
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async() => {
                 expenseList.innerHTML= '';
                 pagination.innerHTML= '';
                 try{
-                    const response = await axios.get(`http://13.208.169.65:3000/user/expenses?pageNumber=${page}&rows=${rowsPerPage}`, {headers: {"Authorization": token}});
+                    const response = await axios.get(`/user/expenses?pageNumber=${page}&rows=${rowsPerPage}`, {headers: {"Authorization": token}});
                 
                     const data = response.data.expenses;
                     
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async() => {
                 if(e.target.classList.contains('delete')){
                     const id = e.target.getAttribute('data-id');
                     try{
-                        const response = await axios.delete(`http://13.208.169.65:3000/user/deleteExpense?id=${id}`, {headers: {"Authorization": token}});
+                        const response = await axios.delete(`/user/deleteExpense?id=${id}`, {headers: {"Authorization": token}});
                         console.log(response.data.message);
                         fetchExpenses(currentPage, rows.value);
         
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         
             premium.addEventListener('click', async() => {
                 try{
-                    const response = await axios.get('http://13.208.169.65:3000/user/purchasePremium', {headers: {"Authorization": token}});
+                    const response = await axios.get('/user/purchasePremium', {headers: {"Authorization": token}});
                     
                     var options = {
                         "order_id": response.data.order.id,
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async() => {
                 rzp.open()
                 rzp.on('payment.failed', async function() {
                     try{
-                        const response = await axios.post('http://13.208.169.65:3000/user/paymentFailed', { order_id: options.order_id}, { headers: {"Authorization": token} });
+                        const response = await axios.post('/user/paymentFailed', { order_id: options.order_id}, { headers: {"Authorization": token} });
                         console.log(response.data.message);
                     }
                     catch(error){
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         
             showLeaderboards.addEventListener('click', async() => {
                 try{
-                    const response = await axios.get('http://13.208.169.65:3000/user/showLeaderboards',{ headers: {"Authorization": token} });
+                    const response = await axios.get('/user/showLeaderboards',{ headers: {"Authorization": token} });
                     const data = response.data;
                     leaderboards.innerHTML = '';
                     data.forEach(expense => {
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async() => {
                 });
         
                 try{
-                    const response = await axios.post('http://13.208.169.65:3000/user/expense', jsondata, {headers: {"Authorization": token}});
+                    const response = await axios.post('/user/expense', jsondata, {headers: {"Authorization": token}});
                     console.log('expense added :', response.data.message);
         
                     expenseList.innerHTML= '';
@@ -185,11 +185,11 @@ document.addEventListener('DOMContentLoaded', async() => {
             });            
             	
         }
-    }
-    catch(error){
-        overlay.style.display = 'block';
-        document.body.classList.add('overlay-open');
-    }
+    // }
+    // catch(error){
+        // overlay.style.display = 'block';
+        // document.body.classList.add('overlay-open');
+    // }
 
-});
+    );
 

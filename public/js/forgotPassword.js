@@ -6,7 +6,7 @@ forgotPasswordForm.addEventListener('submit', async(e) => {
     e.preventDefault();
     message.textContent= 'Reset link send to your email!';
     try{
-        const response = await axios.post('http://13.208.169.65:3000/user/password/forgotPassword', {email: email.value});
+        const response = await axios.post('/user/password/forgotPassword', {email: email.value});
         console.log(response.data.message);
     }
     catch(error){

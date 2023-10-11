@@ -13,7 +13,7 @@ if (loginForm){
         });
         
         try{
-            const response = await axios.post('http://13.208.169.65:3000/user/login', jsondata);
+            const response = await axios.post('/user/login', jsondata);
             window.location.href = '/index.html';
             localStorage.setItem('token', response.data.token);
 
