@@ -14,11 +14,11 @@ let currentPage = 1;
 
 document.addEventListener('DOMContentLoaded', async() => {
 
-    // try{
-        // const response = await axios.get('/user/session', {headers: {"Authorization": token}});
-        // if(response.data.session){
-            // overlay.style.display = 'none';
-            // document.body.classList.remove('overlay-open');
+    try{
+        const response = await axios.get('/user/session', {headers: {"Authorization": token}});
+        if(response.data.session){
+            overlay.style.display = 'none';
+            document.body.classList.remove('overlay-open');
 
             function isPremium(p){            
                 if(p){
@@ -185,11 +185,11 @@ document.addEventListener('DOMContentLoaded', async() => {
             });            
             	
         }
-    // }
-    // catch(error){
-        // overlay.style.display = 'block';
-        // document.body.classList.add('overlay-open');
-    // }
+    }
+    catch(error){
+        overlay.style.display = 'block';
+        document.body.classList.add('overlay-open');
+    }
 
-    );
+});
 

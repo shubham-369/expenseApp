@@ -15,6 +15,10 @@ document.addEventListener('DOMContentLoaded', ()=> {
       
 
     function monthReport(data) {
+        if (data.length === 0) {
+            MReport.innerHTML='<td colspan="4" class="text-center">No expense in this month!</td>';
+            return;
+        }
         let total = 0;
         MReport.innerHTML= '';
         for (let expense of data) {
@@ -37,23 +41,23 @@ document.addEventListener('DOMContentLoaded', ()=> {
         YReport.innerHTML = `
           <tr>
             <td class="text-left">Total Expense Of Year</td>
-            <td class="text-right">${total}</td>
+            <td class="text-right">${total.length === 0? 0: total[0].total}</td>
           </tr>
           <tr>
-            <td colspan="2" class="text-right text-danger">${total}</td>
+            <td colspan="2" class="text-right text-danger">${total.length === 0? 0 : total[0].total}</td>
           </tr>
         `;
       
-        YReport.lastElementChild.lastElementChild.textContent = total;
+        YReport.lastElementChild.lastElementChild.textContent = total[0].total;
       }
       
     
     month.addEventListener('change', async()=> {
         try{
             const response = await axios.get(`/user/report?year=${year.value}&month=${month.value}`, {headers: {"Authorization": token}});
-            
+
             monthReport(response.data.MonthExpenses);
-            yearReport(response.data.YearExpense.totalExpense);
+            yearReport(response.data.YearExpense);
         }
         catch(error) {
             console.log('Error while getting report! ', error);

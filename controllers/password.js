@@ -1,20 +1,27 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/user');
-const sequelize = require('../util/database');
+const mongoose = require('mongoose');
 const sendInBlue = require('sib-api-v3-sdk');
-const forgotPasswordRequest = require('../models/forgotPassword');
-const crypto = require('crypto');
+const FPRequest = require('../models/forgotPassword');
 
 exports.forgotPassword = async (req, res, next) => {
     const {email} = req.body;
-    const t = await sequelize.transaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try{            
-        const user = await User.findOne({where: {email: email}}, {transaction: t});
+        const user = await User.findOne({ email: email }).session(session);
         if(!user){
+            console.error('user not found for', email);
+            await session.abortTransaction();
+            session.endSession();
             return res.status(404).json({message: 'Email does not exist'});
         }
-        const FP = await forgotPasswordRequest.create({userId: user.id}, {transaction: t});
-        const resetId = FP.id;
+        const FP = new FPRequest({
+            isActive: true,
+            user: user._id
+        });
+        await FP.save(session);
+        const resetId = FP._id;
 
         const client = sendInBlue.ApiClient.instance;
         const apiKey = client.authentications['api-key'];
@@ -27,13 +34,15 @@ exports.forgotPassword = async (req, res, next) => {
             sender,
             to: reciever,
             subject: 'Forgot password reset email',
-            htmlContent: `<p>Click the following link to reset your password: <a href="http://13.208.169.65:3000/user/password/resetPassword/${resetId}">Reset password</a></p>`
+            htmlContent: `<p>Click the following link to reset your password: <a href="${process.env.HOST}/user/password/resetPassword/${resetId}">Reset password</a></p>`
         });
-        await t.commit();
+        await session.commitTransaction();
+        session.endSession();
         res.status(200).json({message: 'Email sent'});
     }
     catch(error){
-        await t.rollback();
+        await session.abortTransaction();
+        session.endSession();
         console.log('error while sending email: ', error);
         res.status(500).json({message: 'Email does not exist'});
     }
@@ -41,12 +50,10 @@ exports.forgotPassword = async (req, res, next) => {
 
 exports.resetPassword = async (req, res, next) => {
     const {resetId} = req.params;
-    const nonce = crypto.randomBytes(16).toString('base64');
     try{
-        const request = await forgotPasswordRequest.findOne({where: {id: resetId}});
+        const request = await FPRequest.findOne({_id: resetId});
         if(request.isActive){
-            await request.update({isActive: false});
-            res.setHeader('Content-Security-Policy', `default-src 'self'; script-src 'self' 'nonce-${nonce}';`);
+            await request.updateOne({isActive: false});
             res.status(200).send(`
             <!DOCTYPE html>
             <html>
@@ -56,7 +63,7 @@ exports.resetPassword = async (req, res, next) => {
                     <title></title>
                     <meta name="description" content="">
                     <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style nonce="${nonce}">
+                <style>
                     body {
                         font-family: Arial, sans-serif;
                         background-color: #f2f2f2;
@@ -107,7 +114,7 @@ exports.resetPassword = async (req, res, next) => {
                 <body>
                     <div class="container">
                         <h2>Password Reset</h2>
-                        <form action="/user/password/updatePassword/${resetId}" method="POST" nonce="${nonce}">
+                        <form action="/user/password/updatePassword/${resetId}" method="get" onsubmit="submit(event)">
                             <label for="newPassword">New Password:</label>
                             <input type="password" id="newPassword" name="newPassword" required>
                 
@@ -118,8 +125,12 @@ exports.resetPassword = async (req, res, next) => {
                             <button type="submit" class="btn">Reset Password</button>
                         </form>
                     </div>
-                    <script nonce="${nonce}">
+                    <script>
                         document.addEventListener('DOMContentLoaded', () => {
+                            function submit(event){
+                                event.preventDefault();
+                            }
+                        
                             const n = document.getElementById('newPassword')
                             const c = document.getElementById('confirmPassword');
                             c.addEventListener('input', () => {
@@ -142,47 +153,31 @@ exports.resetPassword = async (req, res, next) => {
 };
 
 exports.updatePassword = async (req, res, next) => {
-    const { newPassword } = req.body;
+    const { newPassword } = req.query;
     const resetId = req.params.resetId;
-    const t = await sequelize.transaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-        const resetRequest = await forgotPasswordRequest.findOne({ where: { id: resetId } }, { transaction: t });
-        const user = await User.findOne({ where: { id: resetRequest.userId } }, { transaction: t });
+        const resetRequest = await FPRequest.findOne({ _id: resetId }).session(session);
+        const user = await User.findOne({ _id: resetRequest.user }).session(session);
 
-        if (user) {
-            const saltRounds = 10;
-
-            bcrypt.genSalt(saltRounds, async (error, salt) => {
-                if (error) {
-                    await t.rollback();
-                    console.error('Error generating salt: ', error);
-                    return res.status(500).json({ message: 'Error while updating password' });
-                } else {
-                    bcrypt.hash(newPassword, salt, async (error, hash) => {
-                        if (error) {
-                            await t.rollback();
-                            console.error('Error hashing password: ', error);
-                            return res.status(500).json({ message: 'Error while updating password' });
-                        } else {
-                            try {
-                                await user.update({ password: hash }, { transaction: t });
-                                await t.commit();
-                                return res.status(200).redirect('http://13.208.169.65:1000/login.html');
-                            } catch (updateError) {
-                                await t.rollback();
-                                console.error('Error updating user password: ', updateError);
-                                return res.status(500).json({ message: 'Error while updating password' });
-                            }
-                        }
-                    });
-                }
-            });
-        } else {
-            await t.rollback();
+        if (!user) {
+            await session.abortTransaction()
+            session.endSession();
             return res.status(500).json({ message: 'No user exists for this reset request' });
         }
+    
+        const saltRounds = 10;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const hash = await bcrypt.hash(newPassword, salt);
+
+        await user.updateOne({ password: hash});
+        await session.commitTransaction();
+        session.endSession();
+
     } catch (error) {
-        await t.rollback();
+        await session.abortTransaction();
+        session.endSession();
         console.error('Error in password update controller: ', error);
         return res.status(500).json({ message: 'Error while updating password' });
     }

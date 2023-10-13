@@ -3,7 +3,7 @@ const router = express.Router();
 const userControllers = require('../controllers/expense');
 const authenticate = require('../middleware/authorization');
 
-// router.get('/session', authenticate, userControllers.session);
+router.get('/session', authenticate, userControllers.session);
 
 router.post('/expense',authenticate, userControllers.addExpense);
 

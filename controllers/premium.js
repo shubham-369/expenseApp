@@ -1,7 +1,8 @@
 const User = require('../models/user');
 const Order = require('../models/order');
 const Razorpay = require('razorpay');
-const sequelize = require('../util/database');
+const { default: mongoose } = require('mongoose');
+
 
 exports.purchasePremium = async (req, res, next) => {
     try{
@@ -20,7 +21,12 @@ exports.purchasePremium = async (req, res, next) => {
                 }
             });
         });
-        await req.user.createOrder({orderID: order.id, status: 'PENDING'});
+        const CreateOrder = new Order({
+            orderId: order.id, 
+            status: 'PENDING',
+            user: req.user._id
+        });
+        await CreateOrder.save();
 
         res.status(201).json({order, key_id: rzp.key_id});
     }
@@ -31,53 +37,58 @@ exports.purchasePremium = async (req, res, next) => {
 };
 
 exports.updateTransactionStatus = async (req, res, next) => {
-    const t = await sequelize.transaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
     const {order_id, payment_id} = req.body;
     try{
         if(!payment_id){
             throw new Error('payment id missing');
         }
-        const order = await Order.findOne({where: {orderID: order_id}}, {transaction: t});
+        const order = await Order.findOne({orderId: order_id}).session(session);
         if(!order){
-            await t.rollback();
-            res.status(404).json({message: 'Order not found'});
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({message: 'Order not found'});
         }
-        promise1 = order.update({paymentID: payment_id, status: 'SUCCESSFUL'}, {transaction: t})
-        promise2 = req.user.update({isPremiumUser: true}, {transaction: t});
-        Promise.all([promise1, promise2])
-        .then(() => {
-            t.commit();
-            res.status(202).json({message: 'Transaction Successful', success: true});
-        })
-        .catch((error) => {
-            t.rollback();
-            console.log('Error while making payment: ', error);
-            res.status(500).json({message: 'Transaction failed!'});
-        });
+        await order.updateOne({ paymentId: payment_id, status: 'SUCCESSFUL' }).session(session);
+        await User.updateOne(
+            { _id: req.user._id },
+            { isPremiumUser: true }
+        ).session(session);
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({ message: 'Payment successful', success: true });
     }
     catch(error){        
-        await t.rollback();
+        await session.abortTransaction();
+        session.endSession();
         console.log('Error while making payment: ', error);
         res.status(500).json({message: 'Transaction failed!'});
     }
 };
 
 exports.paymentFailed = async (req, res, next) => {
-    const t = await sequelize.transaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
     const ID = req.body.order_id;
     try{
-        const order = await Order.findOne({ where: {orderID: ID} }, {transaction: t});
+        const order = await Order.findOne( {orderId: ID }).session(session);
         if(!order){
-            await t.rollback()
+            await session.abortTransaction();
+            session.endSession();
             res.status(500).json({message: 'Order id not found'});
         }
 
-        await order.update({status: 'FAILED'}, {transaction: t});
-        await t.commit();
+        await order.updateOne({status: 'FAILED'}).session(session);
+        await session.commitTransaction();
+        session.endSession();
         res.status(200).json({message: 'Payment failed status updated'});
     }
     catch(error){
-        await t.rollback();
+        await session.abortTransaction();
+        session.endSession();
         console.log('error while updating failed status: ', error);
         res.status(500).json({message: 'Internal server error!'});
     };
@@ -85,10 +96,10 @@ exports.paymentFailed = async (req, res, next) => {
 
 exports.showLeaderboards = async (req, res, next) => {
     try{
-        const users = await User.findAll({
-            attributes: ['username', 'totalExpense'],
-            order: [['totalExpense', 'DESC']],
-        });
+        const users = await User.find({}, 'username totalExpense')
+        .sort({ totalExpense: -1 })
+        .exec();
+      
         res.status(201).json(users);
     }
     catch(error){
